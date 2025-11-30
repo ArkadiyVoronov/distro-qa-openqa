@@ -1,0 +1,66 @@
+name: Run openQA Test (GitHub-only)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  openqa:
+    runs-on: ubuntu-latest
+    # GitHub-hosted runner — НЕ поддерживает KVM, но поддерживает QEMU+TCG
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install openQA and QEMU
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            openqa openqa-client \
+            qemu-utils qemu-system-x86 \
+            libvirt-daemon-system virtinst \
+            wget curl
+
+      - name: Start openQA services
+        run: |
+          sudo systemctl start openqa-webui openqa-scheduler
+          sudo systemctl status openqa-webui --no-pager
+
+      - name: Download test ISO (example: Alpine Linux)
+        run: |
+          mkdir -p /var/lib/openqa/share/factory/iso
+          wget -O /var/lib/openqa/share/factory/iso/alpine-standard-3.19.0-x86_64.iso \
+            https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86_64/alpine-standard-3.19.0-x86_64.iso
+
+      - name: Upload ISO to openQA (via CLI)
+        run: |
+          sudo openqa-cli api --host http://localhost -X POST \
+            iso/upload \
+            ISO=alpine-standard-3.19.0-x86_64.iso
+
+      - name: Trigger test job
+        run: |
+          sudo openqa-cli api --host http://localhost -X POST \
+            job_templates/schedule \
+            DISTRI=alpine \
+            VERSION=3.19 \
+            FLAVOR=standard \
+            ISO=alpine-standard-3.19.0-x86_64.iso \
+            ARCH=x86_64 \
+            MACHINE=64bit
+
+      - name: Wait and collect results (simplified)
+        run: |
+          echo "⚠️ openQA runs tests in background. In full setup, you'd poll /api/v1/jobs."
+          echo "For demo, we assume it starts."
+          sleep 30
+          sudo journalctl -u openqa-worker\* --no-pager | tail -n 20
+
+      - name: Save openQA logs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openqa-logs
+          path: /var/log/openqa/
+          retention-days: 3
