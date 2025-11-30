@@ -1,26 +1,26 @@
-- name: Install openQA
-  run: |
-    sudo apt update
-    sudo apt install -y openqa openqa-client sqlite3
+steps:
+  - name: Install openQA
+    run: |
+      sudo apt update
+      sudo apt install -y openqa openqa-client sqlite3
 
+  - name: Initialize openQA database
+    run: sudo -u openqa openqa-initdb.pl --sqlite
 
-- name: Initialize openQA database
-  run: sudo -u openqa openqa-initdb.pl --sqlite
+  - name: Start openQA in background
+    run: |
+     sudo -u openqa openqa-webui --host 127.0.0.1 --port 8080 >> /tmp/webui.log 2>&1 &
+     sudo -u openqa openqa-scheduler >> /tmp/scheduler.log 2>&1 &
+     sleep 15
 
-- name: Start openQA services in background
-  run: |
-    sudo -u openqa openqa-webui --host 127.0.0.1 --port 8080 >> /tmp/openqa-webui.log 2>&1 &
-    sudo -u openqa openqa-scheduler >> /tmp/openqa-scheduler.log 2>&1 &
-    sleep 15
+  - name: Check if openQA is ready
+    run: curl -f http://localhost:8080
 
-- name: Verify openQA is running
-  run: curl -f http://localhost:8080 || { cat /tmp/openqa-webui.log; exit 1; }
+  - name: Download Alpine ISO
+    run: |
+      mkdir -p /var/lib/openqa/share/factory/iso
+      wget -O /var/lib/openqa/share/factory/iso/alpine.iso https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86_64/alpine-standard-3.19.0-x86_64.iso
 
-- name: Download Alpine ISO
-  run: |
-    mkdir -p /var/lib/openqa/share/factory/iso
-    wget -O /var/lib/openqa/share/factory/iso/alpine-standard-3.19.0-x86_64.iso \
-      https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86_64/alpine-standard-3.19.0-x86_64.iso
-
-- name: Upload ISO to openQA
-  run: openqa-cli api --host http://localhost:8080 -X POST iso/upload ISO=alpine-standard-3.19.0-x86_64.iso
+  - name: Upload ISO via openqa-cli
+    run: |
+      openqa-cli api --host http://localhost:8080 -X POST iso/upload ISO=alpine.iso
