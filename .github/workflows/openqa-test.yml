@@ -5,30 +5,22 @@
 
 
 - name: Initialize openQA database
-  run: |
-    sudo -u openqa openqa-initdb.pl --sqlite
+  run: sudo -u openqa openqa-initdb.pl --sqlite
 
-- name: Start openQA in background (no systemd)
+- name: Start openQA services in background
   run: |
-    # Запускаем веб-интерфейс в фоне
     sudo -u openqa openqa-webui --host 127.0.0.1 --port 8080 >> /tmp/openqa-webui.log 2>&1 &
-    # Запускаем scheduler
     sudo -u openqa openqa-scheduler >> /tmp/openqa-scheduler.log 2>&1 &
-    # Ждём запуска
     sleep 15
-    echo "openQA should be running on http://localhost:8080"
 
-- name: Test connection
-  run: curl -s http://localhost:8080 || (echo "openQA not ready" && exit 1)
+- name: Verify openQA is running
+  run: curl -f http://localhost:8080 || { cat /tmp/openqa-webui.log; exit 1; }
 
-- name: Upload ISO
+- name: Download Alpine ISO
   run: |
     mkdir -p /var/lib/openqa/share/factory/iso
     wget -O /var/lib/openqa/share/factory/iso/alpine-standard-3.19.0-x86_64.iso \
       https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86_64/alpine-standard-3.19.0-x86_64.iso
 
-- name: Upload ISO via CLI
-  run: |
-    openqa-cli api --host http://localhost:8080 -X POST \
-      iso/upload \
-      ISO=alpine-standard-3.19.0-x86_64.iso
+- name: Upload ISO to openQA
+  run: openqa-cli api --host http://localhost:8080 -X POST iso/upload ISO=alpine-standard-3.19.0-x86_64.iso
