@@ -3,6 +3,7 @@
     sudo apt update
     sudo apt install -y openqa openqa-client sqlite3
 
+
 - name: Initialize openQA database
   run: |
     sudo -u openqa openqa-initdb.pl --sqlite
