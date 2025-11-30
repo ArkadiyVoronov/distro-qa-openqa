@@ -32,7 +32,7 @@ jobs:
         run: |
           sudo mkdir -p /var/lib/openqa/share/factory/iso
           sudo wget -O /var/lib/openqa/share/factory/iso/TinyCore-15.0.iso \
-            https://mirror.ibcp.fr/pub/tinycorelinux/15.x/x86/release/TinyCore-15.0.iso
+            https://tinycorelinux.net/15.x/x86/release/TinyCore-15.0.iso
           sudo chmod 644 /var/lib/openqa/share/factory/iso/TinyCore-15.0.iso
 
       - name: Upload ISO to openQA (via CLI)
