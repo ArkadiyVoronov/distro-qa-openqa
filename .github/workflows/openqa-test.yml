@@ -28,11 +28,12 @@ jobs:
           sudo systemctl start openqa-webui openqa-scheduler
           sudo systemctl status openqa-webui --no-pager
 
-      - name: Download test ISO (example: Alpine Linux)
+      - name: Download Tiny Core Linux ISO
         run: |
-          mkdir -p /var/lib/openqa/share/factory/iso
-          wget -O /var/lib/openqa/share/factory/iso/alpine-standard-3.19.0-x86_64.iso \
-            https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86_64/alpine-standard-3.19.0-x86_64.iso
+          sudo mkdir -p /var/lib/openqa/share/factory/iso
+          sudo wget -O /var/lib/openqa/share/factory/iso/TinyCore-15.0.iso \
+            https://mirror.ibcp.fr/pub/tinycorelinux/15.x/x86/release/TinyCore-15.0.iso
+          sudo chmod 644 /var/lib/openqa/share/factory/iso/TinyCore-15.0.iso
 
       - name: Upload ISO to openQA (via CLI)
         run: |
